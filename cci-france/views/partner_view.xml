@@ -1,0 +1,51 @@
+<odoo>
+    <data>
+         <record id="view_partner_inherit_form" model="ir.ui.view">
+             <field name="name">res.partner.form.cci</field>
+             <field name="model">res.partner</field>
+             <field name="type">form</field>
+             <field name="priority" eval="60"/>
+             <field name="inherit_id" ref="membership.view_partner_form"/>
+             <field name="arch" type="xml">
+                 <div name="button_box" position="inside">
+                     <button type="object" class="oe_stat_button" 
+                         icon="fa-pencil-square-o" 
+                         name="action_view_partner_membership"
+                         context="{'default_partner_id': active_id}">
+                         <div class="o_form_field o_stat_info">
+                            <span class="o_stat_value">
+                                <field name="total_membership"/>
+                            </span>
+                            <span class="o_stat_text">Adhésions</span>
+                        </div>
+                    </button>
+                 </div>
+                 <xpath expr="//page[@name='membership']" position="replace">
+                    <page string="Adhésion">
+                        <group>
+                            <group>
+                                <field name="is_member" readonly="True"/>
+                                <field name="individual_member" />
+                                <field name="membership_type" readonly="True"/>
+                                <label for="membership_state"/>
+                                    <div>
+                                    <field name="membership_state"/>
+                                    <!--
+                                    <button name="%(membership.action_membership_invoice_view)d" 
+                                        type="action" string="Payer une cotisation (test)"
+                                        class="oe_link"/>
+                                    -->
+                                </div>
+                            </group>
+                            <group>
+                                <field name="date_first_start" readonly="True"/>
+                                <field name="date_last_stop" readonly="True"/>
+                            </group>
+                        </group>
+                    </page>
+                 </xpath>
+
+             </field>
+         </record>
+    </data>
+</odoo>
