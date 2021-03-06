@@ -1,0 +1,46 @@
+# sphinx build directories
+_build/
+
+# dotfiles
+.*
+!.gitignore
+!.env
+!.prospector.yaml
+!.pylintrc
+# compiled python files
+*.py[co]
+# setup.py egg_info
+*.egg-info
+# emacs backup files
+*~
+# hg stuff
+*.orig
+*.bak
+status
+# odoo filestore
+/openerp/filestore
+!/openerp/filestore/custom_modules/README.md
+
+# maintenance migration scripts
+openerp/addons/base/maintenance
+
+# generated for windows installer?
+install/win32/*.bat
+install/win32/meta.py
+
+# various virtualenv
+/bin/
+/build/
+/dist/
+/include/
+/lib/
+/man/
+/share/
+/src/
+/conf/
+
+/coverage_html_report/
+/test.log
+
+htmlcov/
+init-db/
