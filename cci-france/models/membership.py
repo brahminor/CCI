@@ -1,3 +1,6 @@
+from datetime import datetime
+from dateutil import relativedelta
+
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 
@@ -28,6 +31,17 @@ class AccountMove(models.Model):
         help="Ligne adhesion liée à cette facture")
 
 
+class MembershipType(models.Model):
+    """
+    Type d'adhésion
+    """
+    _name = "membership.type"
+    _description = "Type d'adhesion"
+
+    name = fields.Char(string='Nom', size=64, required=True, help="Nom du type d'adhésion")
+    description = fields.Text(string='Description', )
+
+
 class MembershipLine(models.Model):
     _inherit = "membership.membership_line"
     _description = "Ligne d'adhesion"
@@ -48,14 +62,21 @@ class MembershipLine(models.Model):
         readonly=True, store=True,
         help="Case cochée si une cotisation à titre individuelle est validée sur la période   en cours")
     company_id = fields.Many2one('res.company', string="Societé", readonly=False)
-    date_from = fields.Date(string='From', readonly=False, required=True)
-    date_to = fields.Date(string='To', readonly=False, required=True)
+    date_from = fields.Date(
+        string='From', readonly=False, required=True,
+        default=datetime.now().strftime('%Y-01-01'))
+    date_to = fields.Date(
+        string='To', readonly=False, required=True,
+        default=datetime.now().strftime('%Y-12-31'))
+        # default=str(datetime.now() + relativedelta.relativedelta(
+        #    months=+1, day=1, days=-1))[:10])
     member_price = fields.Float(
         string="Frais adhésion", digits='Product Price', required=False,
         store=True, related="membership_id.lst_price")
     sale_order_ids = fields.Many2many('sale.order', string="Bon de commande", )
     account_move_ids = fields.One2many(
-        'account.move', 'membership_line_id', string="Factures")
+        'account.move', 'membership_line_id', string="Factures",
+        compute="_get_membership_invoice")
     contact_ids = fields.Many2many('res.partner', string="Contacts", help="Certaines chambres facturent une adhésion à la société membre, puis facturent une adhésion additionnelle par contact considérés comme membre au sein de l’entreprise. Il faut donc pouvoir identifier quels sont les contacts de l’entreprise qui doivent obtenir le statut membre via l’adhésion enregistrée")
     all_members = fields.Boolean(
         string='Tous les contacts',
@@ -68,6 +89,19 @@ class MembershipLine(models.Model):
     # -----------------------------------------------
     # COMPUTE METHODS
     # -----------------------------------------------
+
+    def _get_membership_invoice(self):
+        """
+        Get all invoices link to this membership
+        """
+        if not self:
+            # Case create
+            return
+
+        for membership in self:
+            invoices = self.env['account.move'].search([
+                ('membership_line_id', '=', membership.id)])
+            membership.account_move_ids = invoices
 
     def check_valid_membership(self):
         """
