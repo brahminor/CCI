@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+    <record id="view_product_form" model="ir.ui.view">
+        <field name="name">product.template.form</field>
+        <field name="model">product.template</field>
+        <field name="type">form</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page string="Adhesion" attrs="{'invisible': [('type', '!=', 'service')]}">
+                    <group colspan="4">
+                        <group>
+                            <field name="membership_type_id"/>
+                        </group>
+                        <group>
+                            <field name="membership" string="Produit d'adhesion"/>
+                        </group>
+                    </group>        
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+    <!-- Override base membership product view -->
+    <record id="view_membership_products_tree" model="ir.ui.view">
+        <field name="name">membership.product.template.tree.inherit</field>
+        <field name="model">product.template</field>
+        <field name="priority">60</field>
+        <field name="type">tree</field>
+        <field name="inherit_id" ref="membership.membership_products_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='membership_date_from']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='membership_date_to']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="membership_type_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_membership_products_form" model="ir.ui.view">
+        <field name="name">membership.product.template.from.inherit</field>
+        <field name="model">product.template</field>
+        <field name="type">form</field>
+        <field name="priority">60</field>
+        <field name="inherit_id" ref="membership.membership_products_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='membership_date_from']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='membership_date_to']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//label[@for='membership_date_from']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='list_price']" position="before">
+                <field name="membership_type_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_membership_products_kanban_form" model="ir.ui.view">
+        <field name="name">product.template.form</field>
+        <field name="model">product.template</field>
+        <field name="priority" eval="60"/>
+        <field name="inherit_id" ref="membership.membership_products_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='membership_date_from']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='membership_date_to']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='list_price']" position="before">
+                <field name="membership_type_id"/>
+            </xpath>
+
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="membership.action_membership_products">
+        <field name="name">Produits d'adhesion</field>
+        <field name="res_model">product.template</field>
+        <field name="domain">[('membership','=',True), ('type', '=', 'service')]</field>
+        <field name="context">{'membership':True, 'type':'service', 'default_membership': True, 'default_type': 'service'}</field>
+        <field name="search_view_id" ref="membership.membership_product_search_form_view"/>
+    </record>
+
+</odoo>
