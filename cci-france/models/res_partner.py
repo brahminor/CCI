@@ -1,7 +1,8 @@
-from datetime import date
-from odoo import fields, models
-
 from . import membership
+
+from datetime import date
+from odoo import fields, models, _
+from odoo.exceptions import UserError
 
 
 class ResPartner(models.Model):
@@ -29,10 +30,10 @@ class ResPartner(models.Model):
         string='Nombre adhesion', help='Nombre total des adhésion',
         compute="_total_membership")
 
-    # Delete this fields
+    # FIXME: Delete this fields ???
     membership_state = fields.Selection(
         selection_add=membership._STATE,
-        store=False,
+        store=True,
         compute="_compute_membership_state",
         string="Statut actuel de l'adhérent", help="")
 
@@ -108,13 +109,13 @@ class ResPartner(models.Model):
             if not last_membership:
                 partner.membership_type = None
             else:
-                membership_type = last_membership.membership_id.name
+                membership_type = last_membership.membership_id.membership_type_id.name
 
                 # Insure that the last membership is the one to used
                 for mship in partner.member_lines:
                     if mship.state not in ('draft', 'canceled') and mship.date_from:
                         if last_membership.date_from and mship.date_from > last_membership.date_from:
-                            membership_type = mship.membership_id.name
+                            membership_type = mship.membership_id.membership_type_id.name
                         else:
                             continue
 
@@ -148,3 +149,24 @@ class ResPartner(models.Model):
                     if not last_date or mbship.date_to < last_date:
                         last_date = mbship.date_to
             partner.date_last_stop = last_date
+
+    def create_membership_invoice(self, partner, product, amount, mship_id):
+        """ Create Customer Invoice of Membership for partners.
+        """
+        invoice_vals_list = []
+        addr = partner.address_get(['invoice'])
+        if not addr.get('invoice', False):
+            raise UserError(_("Partner doesn't have an address to make the invoice."))
+
+        invoice_vals_list.append({
+            'move_type': 'out_invoice',
+            'partner_id': partner.id,
+            'membership_line_id': mship_id,
+            'invoice_line_ids': [(0, None, {
+                'product_id': product.id,
+                'quantity': 1,
+                'price_unit': amount,
+                'tax_ids': [(6, 0, product.taxes_id.ids)]})]
+        })
+
+        return self.env['account.move'].create(invoice_vals_list)
