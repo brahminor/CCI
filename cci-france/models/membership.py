@@ -180,7 +180,12 @@ class MembershipLine(models.Model):
                     'tax_ids': [(6, 0, product.taxes_id.ids)]})]
             })
 
-        return self.env['account.move'].create(invoice_vals_list)
+            invoice = self.env['account.move'].create(invoice_vals_list)
+            # Update membership status
+            if invoice and membership.state != 'invoiced':
+                membership.write({'state': 'invoiced'})
+
+            return invoice
 
 
     def action_post(self):

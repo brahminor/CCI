@@ -18,6 +18,11 @@ class MembershipInvoice(models.TransientModel):
                 self.member_price,
                 mship_id[0] if mship_id else False)
 
+        # Update membership status
+        if invoice_list and mship_id:
+            membership = self.env['membership.membership_line'].browse(mship_id)
+            membership.write({'state': 'invoiced'})
+
         search_view_ref = self.env.ref('account.view_account_invoice_filter', False)
         form_view_ref = self.env.ref('account.view_move_form', False)
         tree_view_ref = self.env.ref('account.view_move_tree', False)
