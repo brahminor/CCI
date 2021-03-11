@@ -97,7 +97,7 @@
                                 </div>
                                 <field name="account_move_ids" 
                                     options="{'no_create': True}"
-                                    context="{}"/>
+                                    context="{}" readonly="True"/>
                             </page>
                         </notebook>
                     </sheet>
