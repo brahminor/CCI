@@ -1,0 +1,149 @@
+<odoo>
+    <data>
+        <record id="view_membership_membership_line_tree" model="ir.ui.view">
+            <field name="name">membership.membership_line.tree</field>
+            <field name="model">membership.membership_line</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <tree string="Adhesion">
+                    <field name="name"/>
+                    <field name="partner"/>
+                    <field name="user" widget="many2one_avatar_user"/>
+                    <field name="membership_id"/>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                    <field name="member_price"/>
+                    <field name="state" widget="badge"/>
+                </tree>
+            </field>
+        </record>
+        
+        <record id="view_membership_membership_line_form" model="ir.ui.view">
+            <field name="name">membership.membership_line.form</field>
+            <field name="model">membership.membership_line</field>
+            <field name="type">form</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <form string="Adhesion">
+                    <header>
+                        <!-- Post -->
+                        <button name="action_post" string="A Facturer" class="oe_highlight"
+                                type="object" attrs="{'invisible': [('state', '!=', 'draft')]}"/>
+                        <button name="action_post" string="Remettre à nouveau" class="oe_highlight"
+                                type="object" attrs="{'invisible': [('state', '!=', 'canceled')]}"/>
+                        <!-- Invoiced -->
+                        <button name="action_create_invoice" string="Créer facture" 
+                            type="object" class="oe_highlight"
+                            attrs="{'invisible' : [('state', '!=', 'to_invoice')]}"/>
+
+                        <!-- Cancel -->
+                        <button name="button_cancel" string="Annuler" type="object" 
+                            attrs="{'invisible' : ['|', ('id', '=', False), ('state', 'not in', ('draft', 'to_invoice'))]}"/>
+
+                        <field name="state" widget="statusbar"
+                            statusbar_visible="draft,to_invoice,invoiced,paid,canceled" />
+                    </header>
+                    <sheet>
+                        <div name="button_box" class="oe_button_box">
+                            <widget name="web_ribbon" title="Annulé" 
+                                    bg_color="bg-danger" 
+                                    attrs="{'invisible': [('state', '!=', 'canceled')]}"/>
+
+                        </div>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" select="1" placeholder="Titre de l'adhesion"/>
+                            </h1>
+                        </div>
+
+                        <group colspan="4">
+                            <group>
+                                <field name="user" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="partner" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="individual_member"/>
+                                <field name="company_id" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                            </group>
+                            <group>
+                                <field name="date_from" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="date_to" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="date_cancel" readonly="True"
+                                       attrs="{'invisible':[('state','!=','canceled')]}"/>
+                                <field name="membership_id" string="Service" 
+                                    domain="[('type', '=', 'service')]" 
+                                    attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="member_price"/>
+                            </group>
+                        </group>
+                        <notebook colspan="4">
+                            <page string="Contacts" name="contacts">
+                                <div>
+                                    <label for="all_members"/>
+                                    <field name="all_members" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                </div>
+                                <field name="contact_ids" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                            </page>
+                            <page string="Bons de commandes" name="orders">
+                                <field name="sale_order_ids" options="{'no_create_edit': True}"/>
+                            </page>
+                            <page string="Factures" name="invoices">
+                                <!--
+                                <div>
+                                    <button name="%(membership.action_membership_invoice_view)d" 
+                                        string="Créer une facture"
+                                        type="action"
+                                        attrs="{'invisible':[('state','=','canceled')]}" 
+                                        class="oe_link"/>
+                                </div>
+                                -->
+                                <field name="account_move_ids" options="{'no_create_edit': True}"/>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        
+        <record id="view_membership_membership_line_search" model="ir.ui.view">
+            <field name="name">membership.membership_line.search</field>
+            <field name="model">membership.membership_line</field>
+            <field name="type">search</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <search string="Adhesion">
+                    <field name="name" select="True"/>
+                </search>
+            </field>
+        </record>
+        
+        <record model="ir.actions.act_window" id="act_open_membership_membership_line_view">
+            <field name="name">Adhesion</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">membership.membership_line</field>
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_membership_membership_line_search"/>
+            <field name="domain">[]</field>
+            <field name="context">{}</field>
+        </record>
+        
+        <record model="ir.actions.act_window.view" id="act_open_membership_membership_line_view_form">
+            <field name="act_window_id" ref="act_open_membership_membership_line_view"/>
+            <field name="sequence" eval="20"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_membership_membership_line_form"/>
+        </record>
+        
+        <record model="ir.actions.act_window.view" id="act_open_membership_membership_line_view_tree">
+            <field name="act_window_id" ref="act_open_membership_membership_line_view"/>
+            <field name="sequence" eval="10"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="view_membership_membership_line_tree"/>
+        </record>
+        
+        <menuitem id="menu_membership_membership_line"
+            name="Adhésion"
+            parent="membership.menu_association"
+            sequence="20"
+            action="act_open_membership_membership_line_view"/>
+    </data>
+</odoo>
