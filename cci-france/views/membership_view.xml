@@ -79,9 +79,9 @@
                             <page string="Contacts" name="contacts">
                                 <div>
                                     <label for="all_members"/>
-                                    <field name="all_members" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                    <field name="all_members" attrs="{'readonly': [('state', 'not in', ('draft', 'to_invoice'))]}"/>
                                 </div>
-                                <field name="contact_ids" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="contact_ids" attrs="{'readonly': [('state', 'not in', ('draft', 'to_invoice'))]}"/>
                             </page>
                             <page string="Bons de commandes" name="orders">
                                 <field name="sale_order_ids" options="{'no_create_edit': True}"/>

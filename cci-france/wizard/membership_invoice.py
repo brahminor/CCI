@@ -7,7 +7,26 @@ class MembershipInvoice(models.TransientModel):
     """
     _inherit = "membership.invoice"
 
-    partner_id = fields.Many2one('res.partner', string='Adherent', required=True)
+    partner_id = fields.Many2one(
+        'res.partner', string='Adherent', required=True,
+        domain=lambda self:self._get_partner_list())
+
+    def _get_partner_list(self):
+        """
+        Compute the default list of partner base on partner and contacts
+        define on the membership view
+        """
+        partner_list = []
+        mship_id = self._context.get('active_ids', False)
+        if not mship_id:
+            return
+        membership = self.env['membership.membership_line'].browse(mship_id)
+        partner_list.append(membership.partner.id)
+        if membership.all_members:
+            # Add all contacts to partner list
+            for contact in membership.contact_ids:
+                partner_list.append(contact.id)
+        return [('id', 'in', partner_list)]
 
     def membership_invoice(self):
         mship_id = self._context.get('active_ids', False)
