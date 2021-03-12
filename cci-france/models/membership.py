@@ -12,7 +12,11 @@ _STATE = [
     ('canceled', 'Annulée/Suspendue'),
 ]
 
+
 class SaleOrder(models.Model):
+    """
+    Override sale.order model
+    """
     _inherit = "sale.order"
 
     membership_line_id = fields.Many2one(
@@ -43,7 +47,11 @@ class MembershipType(models.Model):
 
 
 class MembershipLine(models.Model):
-    _inherit = "membership.membership_line"
+    _inherit = [
+        'membership.membership_line', 'portal.mixin', 'mail.thread',
+        'mail.activity.mixin', 'sequence.mixin',
+    ]
+    _name = "membership.membership_line"
     _description = "Ligne d'adhesion"
 
     name = fields.Char(string='Nom', tracking=True, size=64, help='Designation adhesion')
