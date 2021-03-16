@@ -30,8 +30,8 @@
                          <group>
                             <field name="all_members"/>
                             <field name="contact_ids">
-                                <tree edit="buttom">
-                                    <field name="display_name"/>
+                                <tree editable="top">
+                                    <field name="partner_id"/>
                                     <field name="is_member"/>
                                 </tree>
                             </field>

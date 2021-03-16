@@ -1,6 +1,19 @@
 from odoo import fields, models
 
 
+class ContactSaleSubscription(models.Model):
+    """
+    intermediate model allows to manage case we have many contact link
+    to a sale.subscription
+    """
+    _name = "sale.subscription.contact"
+
+    is_member = fields.Boolean(string='Est-Membre', help="Cochez cette case si membre")
+    partner_id = fields.Many2one(
+        'res.partner', string='Contact', required=True, help='Partenaire lié')
+    subscription_id = fields.Many2one('sale.subscription', 'Abonnement')
+
+
 class SaleSubscription(models.Model):
     """
     Override sale_subscription model
@@ -14,8 +27,8 @@ class SaleSubscription(models.Model):
     individual_member = fields.Boolean(
         string='Membre individuel', default=False,
         help="Case cochée si une cotisation à titre individuelle est validée sur la période en cours")
-    contact_ids = fields.Many2many(
-        'res.partner', string="Contacts",
+    contact_ids = fields.One2many(
+        'sale.subscription.contact', 'subscription_id', string='Contacts',
         help="""Certaines chambres facturent une adhésion à la société membre, puis facturent une adhésion additionnelle par contact considérés comme membre au sein de l’entreprise. Il faut donc pouvoir identifier quels sont les contacts de l’entreprise qui doivent obtenir le statut membre via l’adhésion enregistrée""")
     all_members = fields.Boolean(
         string='Tous les contacts',

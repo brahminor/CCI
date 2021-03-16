@@ -70,6 +70,9 @@ class ResPartner(models.Model):
             if subscription and subscription.health != "bad":
                 partner.is_member = True
 
+                # Case we have many member
+                # TODO
+
 
     def _search_is_member(self, operator, value):
         """
@@ -125,7 +128,7 @@ class ResPartner(models.Model):
             for subscription in subscriptions:
                 if not first_date:
                     first_date = subscription.date_start
-                elif subscription.date_start < first_date:
+                elif subscription.date_start and subscription.date_start < first_date:
                     first_date = subscription.date_start
             partner.date_first_start = first_date
 
@@ -140,6 +143,6 @@ class ResPartner(models.Model):
             for subscription in subscriptions:
                 if not last_date:
                     last_date = subscription.date
-                elif subscription.date > last_date:
+                elif subscription.date and subscription.date > last_date:
                     last_date = subscription.date
             partner.date_last_stop = last_date
