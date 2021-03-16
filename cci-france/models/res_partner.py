@@ -11,7 +11,7 @@ class ResPartner(models.Model):
 
     is_member = fields.Boolean(
         string='Est Membre',
-        compute="_compute_is_member", search="_search_is_member",
+        # compute="_compute_is_member", search="_search_is_member",
         help="Case cochée automatiquement lorsqu'une une adhésion est validée pour la période en cours.")
     individual_member = fields.Boolean(
         string='Membre individuel', compute="_compute_individual_member",
@@ -69,9 +69,6 @@ class ResPartner(models.Model):
                 ('partner_id', '=', partner.id)], order="id desc", limit=1)
             if subscription and subscription.health != "bad":
                 partner.is_member = True
-
-                # Case we have many member
-                # TODO
 
 
     def _search_is_member(self, operator, value):
