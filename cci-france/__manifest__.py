@@ -22,7 +22,7 @@
         'wizard/membership_invoice_view.xml',
         'views/partner_view.xml',
         # 'views/membership_view.xml',
-        'views/product_view.xml',
+        # 'views/product_view.xml',
     ],
     'demo': [],
     'installable': True,
