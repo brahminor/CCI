@@ -24,18 +24,18 @@
                     <page string="Adhésion">
                         <group>
                             <group>
-                                <field name="is_member" readonly="True"/>
+                                <field name="is_member" />
                                 <field name="individual_member" />
                                 <field name="membership_type" readonly="True"/>
+                                <!--
                                 <label for="membership_state"/>
                                     <div>
                                     <field name="membership_state"/>
-                                    <!--
                                     <button name="%(membership.action_membership_invoice_view)d" 
                                         type="action" string="Payer une cotisation (test)"
                                         class="oe_link"/>
-                                    -->
                                 </div>
+                                -->
                             </group>
                             <group>
                                 <field name="date_first_start" readonly="True"/>

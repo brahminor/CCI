@@ -11,6 +11,7 @@ class ResPartner(models.Model):
 
     is_member = fields.Boolean(
         string='Est Membre',
+        compute="_compute_is_member", search="_search_is_member",
         help="Case cochée automatiquement lorsqu'une une adhésion est validée pour la période en cours.")
     individual_member = fields.Boolean(
         string='Membre individuel',
@@ -31,19 +32,20 @@ class ResPartner(models.Model):
         compute="_total_membership")
 
     # FIXME: Delete this fields ???
-    membership_state = fields.Selection(
-        selection_add=membership._STATE,
-        store=True,
-        compute="_compute_membership_state",
-        string="Statut actuel de l'adhérent", help="")
+    # membership_state = fields.Selection(
+    #    selection_add=membership._STATE,
+    #    store=True,
+    #    compute="_compute_membership_state",
+    #    string="Statut actuel de l'adhérent", help="")
 
     def _total_membership(self):
         """
         Count the number of invoice for this partner
         """
-        membership_mdl = self.env['membership.membership_line']
+        subscription_mdl = self.env['sale.subscription']
         for partner in self:
-            partner.total_membership = membership_mdl.search_count([('partner', '=', partner.id)])
+            partner.total_membership = subscription_mdl.search_count([
+                ('partner_id', '=', partner.id), ('is_membership', '=', True)])
 
     def action_view_partner_membership(self):
         """
@@ -51,75 +53,58 @@ class ResPartner(models.Model):
         """
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id(
-            "cci-france.act_open_membership_membership_line_view")
-        action['domain'] = [('partner', 'child_of', self.id)]
+            "cci-france.sale_subscription_action_inherit")
+        action['domain'] = [('partner_id', 'child_of', self.id)]
 
         return action
 
-    def _compute_membership_state(self):
+    def _compute_is_member(self):
         """
-        Compute the state of membership for this partner
+        Compute the is_member fiels base on sale.subscription health
         """
-        today = fields.Date.today()
-
-        if not self:
-            return
-
         for partner in self:
-            partner.membership_start = self.env['membership.membership_line'].search([
-                ('partner', '=', partner.associate_member.id or partner.id),
-                ('date_cancel',  '=', False)], limit=1, order='date_from').date_from
-            partner.membership_stop = self.env['membership.membership_line'].search([
-                ('partner', '=', partner.associate_member.id or partner.id),
-                ('date_cancel', '=', False)], limit=1, order='date_to desc').date_to
-            partner.membership_cancel = self.env['membership.membership_line'].search([
-                ('partner', '=', partner.id)], limit=1, order='date_cancel').date_cancel
+            partner.is_member = False
+            # get the lastest subscription
+            subscription = self.env['sale.subscription'].search([
+                ('partner_id', '=', partner.id)], order="id desc", limit=1)
+            if subscription and subscription.health != "bad":
+                partner.is_member = True
 
-            if partner.membership_cancel and today > partner.membership_cancel:
-                partner.membership_state = 'canceled'
-                continue
 
-            line_states = [mline.state for mline in partner.member_lines if \
-                (mline.date_to or date.min) >= today and \
-                (mline.date_from or date.min) <= today]
+    def _search_is_member(self, operator, value):
+        """
+        Implement search method to used on is_member computed field
+        """
+        recs = self.search([]).filtered(lambda partner : partner.is_member is True )
 
-            state = "draft"
-            if 'paid' in line_states:
-                state = 'paid'
-            elif 'invoiced' in line_states:
-                state = 'invoiced'
-            elif 'to_invoice' in line_states:
-                state = 'to_invoice'
-            elif 'canceled' in line_states:
-                state = 'canceled'
+        if recs:
+            return [('id', 'in', [x.id for x in recs])]
 
-            partner.membership_state = state
+
+    def _compute_individual_member(self):
+        """
+        Check the individual member field on sale.subscription model
+        an assing the value on current partner
+        """
+        # FIXME
+        pass
 
     def _membership_type(self):
         """
-        Compute membership type field base on the last
-        membership register for this partner
+        Compute the subscription type field base on the last
+        subscription templace register for this partner
         """
         if not self:
             return
 
         for partner in self:
-            last_membership = partner.member_lines[-1] if partner.member_lines else None
+            last_subscription = self.env['sale.subscription'].search([
+                ('partner_id', '=', partner.id)], order="id desc", limit=1)
 
-            if not last_membership:
+            if not last_subscription:
                 partner.membership_type = None
             else:
-                membership_type = last_membership.membership_id.membership_type_id.name
-
-                # Insure that the last membership is the one to used
-                for mship in partner.member_lines:
-                    if mship.state not in ('draft', 'canceled') and mship.date_from:
-                        if last_membership.date_from and mship.date_from > last_membership.date_from:
-                            membership_type = mship.membership_id.membership_type_id.name
-                        else:
-                            continue
-
-                partner.membership_type = membership_type
+                partner.membership_type = last_subscription.template_id.name
 
     def compute_date_first_start(self):
         """
@@ -130,12 +115,13 @@ class ResPartner(models.Model):
 
         for partner in self:
             first_date = None
-            for mbship in partner.member_lines:
-                if mbship.state not in ('draft', 'canceled') and mbship.date_from:
-                    if not first_date or mbship.date_from < first_date:
-                        first_date = mbship.date_from
-                    else:
-                        continue
+            subscriptions = self.env['sale.subscription'].search([
+                ('partner_id', '=', partner.id)])
+            for subscription in subscriptions:
+                if not first_date:
+                    first_date = subscription.date_start
+                elif subscription.date_start < first_date:
+                    first_date = subscription.date_start
             partner.date_first_start = first_date
 
     def compute_date_last_stop(self):
@@ -144,29 +130,11 @@ class ResPartner(models.Model):
         """
         for partner in self:
             last_date = None
-            for mbship in partner.member_lines:
-                if mbship.state not in ('draft', 'canceled') and mbship.date_to:
-                    if not last_date or mbship.date_to < last_date:
-                        last_date = mbship.date_to
+            subscriptions = self.env['sale.subscription'].search([
+                ('partner_id', '=', partner.id)])
+            for subscription in subscriptions:
+                if not last_date:
+                    last_date = subscription.date
+                elif subscription.date > last_date:
+                    last_date = subscription.date
             partner.date_last_stop = last_date
-
-    def create_membership_invoice(self, partner, product, amount, mship_id):
-        """ Create Customer Invoice of Membership for partners.
-        """
-        invoice_vals_list = []
-        addr = partner.address_get(['invoice'])
-        if not addr.get('invoice', False):
-            raise UserError(_("Partner doesn't have an address to make the invoice."))
-
-        invoice_vals_list.append({
-            'move_type': 'out_invoice',
-            'partner_id': partner.id,
-            'membership_line_id': mship_id,
-            'invoice_line_ids': [(0, None, {
-                'product_id': product.id,
-                'quantity': 1,
-                'price_unit': amount,
-                'tax_ids': [(6, 0, product.taxes_id.ids)]})]
-        })
-
-        return self.env['account.move'].create(invoice_vals_list)
