@@ -86,7 +86,8 @@
         <field name="res_model">sale.subscription</field>
         <field name="view_mode">kanban,tree,form,pivot,graph,cohort,activity</field>
         <field name="context">{
-            "search_default_my_subscriptions":1
+            "search_default_my_subscriptions":1,
+            "default_is_membership": 1,
         }</field>
         <field name="domain">[('is_membership', '=', True)]</field>
         <field name="search_view_id" ref="sale_subscription.sale_subscription_view_search"/>
