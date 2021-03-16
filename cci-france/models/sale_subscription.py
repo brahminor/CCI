@@ -20,3 +20,9 @@ class SaleSubscription(models.Model):
     all_members = fields.Boolean(
         string='Tous les contacts',
         help='Cochez cette case si tous les contacts sont membre')
+
+    # Override partner field to delete domain
+    partner_id = fields.Many2one(
+        'res.partner', string='Contact/Société', required=True, auto_join= True)
+    partner_invoice_id = fields.Many2one('res.partner', string='Invoice Address')
+    partner_shipping_id = fields.Many2one('res.partner', string='Service Address')

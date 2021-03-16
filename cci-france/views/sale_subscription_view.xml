@@ -79,4 +79,25 @@
             </xpath>
         </field>
     </record>
+
+    <!-- New action for membership menu-->
+    <record id="sale_subscription_action_inherit" model="ir.actions.act_window">
+        <field name="name">Adhesion</field>
+        <field name="res_model">sale.subscription</field>
+        <field name="view_mode">kanban,tree,form,pivot,graph,cohort,activity</field>
+        <field name="context">{
+            "search_default_my_subscriptions":1
+        }</field>
+        <field name="domain">[('is_membership', '=', True)]</field>
+        <field name="search_view_id" ref="sale_subscription.sale_subscription_view_search"/>
+    </record>
+
+    <menuitem name="Gestion Adhesions" id="membership.menu_association"
+        sequence="15" web_icon="cci-france,static/src/img/cci-logo.png"/>
+
+    <menuitem id="menu_membership_membership_line"
+        name="Adhésions"
+        parent="membership.menu_association"
+        sequence="20"
+        action="sale_subscription_action_inherit"/>
 </odoo>
