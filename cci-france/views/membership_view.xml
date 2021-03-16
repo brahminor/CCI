@@ -1,5 +1,6 @@
 <odoo>
     <data>
+        <!--
         <record id="view_membership_membership_line_tree" model="ir.ui.view">
             <field name="name">membership.membership_line.tree</field>
             <field name="model">membership.membership_line</field>
@@ -27,17 +28,14 @@
             <field name="arch" type="xml">
                 <form string="Adhesion">
                     <header>
-                        <!-- Post -->
                         <button name="action_post" string="A Facturer" class="oe_highlight"
                                 type="object" attrs="{'invisible': [('state', '!=', 'draft')]}"/>
                         <button name="action_post" string="Remettre à nouveau" class="oe_highlight"
                                 type="object" attrs="{'invisible': [('state', '!=', 'canceled')]}"/>
-                        <!-- Invoiced -->
                         <button name="action_create_invoice" string="Créer facture" 
                             type="object" class="oe_highlight"
                             attrs="{'invisible' : [('state', '!=', 'to_invoice')]}"/>
 
-                        <!-- Cancel -->
                         <button name="button_cancel" string="Annuler" type="object" 
                             attrs="{'invisible' : ['|', ('id', '=', False), ('state', 'not in', ('draft', 'to_invoice'))]}"/>
 
@@ -101,10 +99,8 @@
                             </page>
                         </notebook>
                     </sheet>
-                    <!-- Attachment preview -->
                     <div class="o_attachment_preview"
                          attrs="{'invisible': [('state', '!=', 'draft')]}" />
-                    <!-- Chatter -->
                     <div class="oe_chatter">
                         <field name="message_follower_ids" groups="base.group_user"/>
                         <field name="activity_ids"/>
@@ -113,7 +109,6 @@
                 </form>
             </field>
         </record>
-        
         <record id="view_membership_membership_line_search" model="ir.ui.view">
             <field name="name">membership.membership_line.search</field>
             <field name="model">membership.membership_line</field>
@@ -150,7 +145,6 @@
             <field name="view_id" ref="view_membership_membership_line_tree"/>
         </record>
 
-        <!-- Membership Type -->
         <record id="view_membership_type_tree" model="ir.ui.view">
             <field name="name">membership.type.tree</field>
             <field name="model">membership.type</field>
@@ -233,5 +227,6 @@
             parent="membership.menu_association"
             sequence="20"
             action="act_open_membership_membership_line_view"/>
+    -->
     </data>
 </odoo>
