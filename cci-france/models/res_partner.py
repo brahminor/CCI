@@ -14,7 +14,7 @@ class ResPartner(models.Model):
         compute="_compute_is_member", search="_search_is_member",
         help="Case cochée automatiquement lorsqu'une une adhésion est validée pour la période en cours.")
     individual_member = fields.Boolean(
-        string='Membre individuel',
+        string='Membre individuel', compute="_compute_individual_member",
         help="Case cochée si une cotisation à titre individuelle est validée sur la période en cours")
     date_first_start = fields.Date(
         string='Date Première adhésion',
@@ -86,8 +86,13 @@ class ResPartner(models.Model):
         Check the individual member field on sale.subscription model
         an assing the value on current partner
         """
-        # FIXME
-        pass
+        for partner in self:
+            partner.individual_member = False
+            # get the lastest subscription
+            subscription = self.env['sale.subscription'].search([
+                ('partner_id', '=', partner.id)], order="id desc", limit=1)
+            if subscription and subscription.individual_member:
+                partner.individual_member = True
 
     def _membership_type(self):
         """
