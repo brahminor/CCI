@@ -29,8 +29,8 @@ class SaleSubscription(models.Model):
     individual_member = fields.Boolean(
         string='Membre individuel', default=False,
         help="Case cochée si une cotisation à titre individuelle est validée sur la période en cours")
-    contact_ids = fields.One2many(
-        'sale.subscription.contact', 'subscription_id', string='Contacts',
+    contact_ids = fields.Many2many(
+        'res.partner', string='Contacts',
         help="""Certaines chambres facturent une adhésion à la société membre, puis facturent une adhésion additionnelle par contact considérés comme membre au sein de l’entreprise. Il faut donc pouvoir identifier quels sont les contacts de l’entreprise qui doivent obtenir le statut membre via l’adhésion enregistrée""")
     all_members = fields.Boolean(
         string='Tous les contacts',
@@ -41,6 +41,8 @@ class SaleSubscription(models.Model):
         'res.partner', string='Contact/Société', required=True, auto_join= True)
     partner_invoice_id = fields.Many2one('res.partner', string='Invoice Address')
     partner_shipping_id = fields.Many2one('res.partner', string='Service Address')
+    company_type = fields.Selection(
+        string="Type partenaire", related="partner_id.company_type")
 
     @api.onchange('all_members')
     def onchange_all_members(self):
@@ -53,6 +55,18 @@ class SaleSubscription(models.Model):
         else:
             for contact in self.contact_ids:
                 contact.is_member = False
+
+    @api.onchange('partner_id')
+    def onchange_partner(self):
+        """
+        Update contact_ids base on partner.
+        If a partner is a company, contact list should only list company member
+        """
+        if not self.partner_id.company_type == 'company':
+            self.contact_ids = None
+            # also reset individual_member field
+            self.individual_member = False
+        self.contact_ids = self.partner_id.child_ids
 
     def check_valid_membership(self):
         """

@@ -13,6 +13,7 @@
             <xpath expr="//field[@name='partner_id']" position="replace">
                 <field name="partner_id" required="1" string="Contact/Société"/>
                 <field name="company_id"/>
+                <field name="company_type" invisible="1"/>
             </xpath>
             <xpath expr="//field[@name='user_id']" position="attributes">
                 <attribute name="string">Responsable</attribute>
@@ -25,13 +26,17 @@
                  <page string="Adhesion" attrs="{'invisible': [('is_membership','=', False)]}">
                      <group colspan="4">
                          <group>
-                             <field name="individual_member"/>
+                             <field name="individual_member" 
+                                    attrs="{'readonly': [('company_type','=', 'company')]}"/>
                          </group>
                          <group>
-                            <field name="all_members"/>
-                            <field name="contact_ids">
+                            <field name="all_members" attrs="{'readonly': [('company_type','!=', 'company')]}"/>
+
+                            <field name="contact_ids"
+                                domain="[('parent_id', '=', partner_id)]"
+                                attrs="{'readonly': [('company_type','!=', 'company')]}">
                                 <tree editable="top">
-                                    <field name="sub_partner_id" />
+                                    <field name="display_name"/>
                                     <field name="is_member"/>
                                 </tree>
                             </field>
