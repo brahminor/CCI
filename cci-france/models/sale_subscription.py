@@ -54,31 +54,62 @@ class SaleSubscription(models.Model):
             for contact in self.contact_ids:
                 contact.is_member = False
 
+    def check_valid_membership(self):
+        """
+        A Membership subscription is valid if:
+            - It's a membership subscription
+            - Their status catagogy is 'progress'
+        """
+        self.ensure_one()
+        result = False
+        if self.is_membership and self.stage_id.category == 'progress':
+            result = True
+        return result
+
     def update_subscription_member(self):
         """
         The purpose of this fuction is to update all the subscription member
-        including sub partner mask as is_member
+        including sub partner mask as is_member.
         """
         if not self:
             return
 
-        partner_members = []
+        partner_is_members = []
+        partner_not_members = []
 
         for subscription in self:
-            if subscription.partner_id:
-                partner_members.append(subscription.partner_id)
-            if not subscription.contact_ids:
-                continue
-            elif subscription.all_members:
-                for contact in subscription.contact_ids:
-                    partner_members.append(contact)
+            if subscription.check_valid_membership():
+                partner_is_members.append(subscription.partner_id)
+
+                if not subscription.contact_ids:
+                    continue
+                elif subscription.all_members:
+                    for contact in subscription.contact_ids:
+                        partner_is_members.append(contact)
+                else:
+                    for contact in subscription.contact_ids:
+                        if contact.is_member:
+                            partner_is_members.append(contact)
             else:
-                for contact in subscription.contact_ids:
-                    if contact.is_member:
-                        partner_members.append(contact)
+                # Mark all member as is_member False
+                partner_not_members.append(subscription.partner_id)
+
+                if not subscription.contact_ids:
+                    continue
+                elif subscription.all_members:
+                    for contact in subscription.contact_ids:
+                        partner_not_members.append(contact)
+                else:
+                    for contact in subscription.contact_ids:
+                        if contact.is_member:
+                            partner_not_members.append(contact)
+
         # Update related partner
-        for partner in partner_members:
+        for partner in partner_is_members:
             partner.write({'is_member': True})
+        for partner in partner_not_members:
+            partner.write({'is_member': False})
+
         return self
 
     @api.model
@@ -88,7 +119,7 @@ class SaleSubscription(models.Model):
         """
         res = super(SaleSubscription, self).create(values)
         # Update is_member field on partner (??)
-        self.update_subscription_member()
+        # self.update_subscription_member()
         return res
 
     def write(self, vals):
@@ -96,6 +127,6 @@ class SaleSubscription(models.Model):
         Override default write method
         """
         res = super(SaleSubscription, self).write(vals)
-        # Update is_member field on partner
+        # Update is_member field on partner base on subscription status type
         self.update_subscription_member()
         return res
