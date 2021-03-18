@@ -1,21 +1,6 @@
 from odoo import api, fields, models
 
 
-class ContactSaleSubscription(models.Model):
-    """
-    intermediate model allows to manage case we have many contact link
-    to a sale.subscription
-    """
-
-    _name = "sale.subscription.contact"
-    _description = "Sale Subscription Contacts"
-
-    is_member = fields.Boolean(string='Est-Membre', help="Cochez cette case si membre")
-    sub_partner_id = fields.Many2one(
-        'res.partner', string='Contact', required=True, help='Partenaire lié')
-    subscription_id = fields.Many2one('sale.subscription', 'Abonnement')
-
-
 class SaleSubscription(models.Model):
     """
     Override sale_subscription model
