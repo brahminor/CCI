@@ -1,6 +1,17 @@
 from odoo import api, fields, models
 
 
+class MembershipType(models.Model):
+    """
+    Type d'adhésion
+    """
+    _name = "membership.type"
+    _description = "Type d'adhesion"
+
+    name = fields.Char(string='Nom', size=64, required=True, help="Nom du type d'adhésion")
+    description = fields.Text(string='Description', )
+
+
 class SaleSubscription(models.Model):
     """
     Override sale_subscription model
@@ -28,6 +39,7 @@ class SaleSubscription(models.Model):
     partner_shipping_id = fields.Many2one('res.partner', string='Service Address')
     company_type = fields.Selection(
         string="Type partenaire", related="partner_id.company_type")
+    membership_type_id = fields.Many2one('membership.type', string='Type adhesion')
 
     @api.onchange('all_members')
     def onchange_all_members(self):
