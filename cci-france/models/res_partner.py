@@ -1,7 +1,7 @@
 from . import membership
 
 from datetime import date
-from odoo import fields, models, _
+from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
 
@@ -143,3 +143,38 @@ class ResPartner(models.Model):
                 elif subscription.date and subscription.date > last_date:
                     last_date = subscription.date
             partner.date_last_stop = last_date
+
+    @api.model
+    def create(self, values):
+        """
+        When adding a new contact to a company, this contact should be
+        mask as is_member if:
+            - The parent company have a validate subscription
+            - The company subscription is an all_members subscription
+
+        Revert if we delete a contact to a company
+        """
+
+        res = super(ResPartner, self).create(values)
+
+        if not values.get('parent_id'):
+            pass
+        else:
+            parent = self.browse(values.get('parent_id'))
+            # Case parent is not a member
+
+            if parent and not parent.is_member:
+                pass
+            else:
+                # Get the last subscription of parent
+                last_subscription = self.env['sale.subscription'].search([
+                    ('partner_id', '=', parent.id)], order="id desc", limit=1)
+                if not last_subscription:
+                    pass
+                elif last_subscription.all_members:
+                    # Mark new company contact as member
+                    res.write({'is_member': True})
+                    # Update the lastest subscription
+                    last_subscription.write({
+                        'contact_ids': [4, last_subscription.id, res.id]})
+        return res
