@@ -11,7 +11,8 @@
                      <button type="object" class="oe_stat_button" 
                          icon="fa-pencil-square-o" 
                          name="action_view_partner_membership"
-                         context="{'default_partner_id': active_id}">
+                         context="{'default_partner_id': active_id}"
+                         attrs="{'invisible': [('individual_member', '=', False), ('parent_id', '!=', False)]}">
                          <div class="o_form_field o_stat_info">
                             <span class="o_stat_value">
                                 <field name="total_membership"/>
