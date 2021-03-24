@@ -157,13 +157,13 @@ class ResPartner(models.Model):
         res = super(ResPartner, self).create(values)
 
         if not values.get('parent_id'):
-            pass
+            return res
         else:
             parent = self.browse(values.get('parent_id'))
             # Case parent is not a member
 
             if parent and not parent.is_member:
-                pass
+                return res
             else:
                 # Get the last subscription of parent
                 last_subscription = self.env['sale.subscription'].search([
@@ -171,13 +171,12 @@ class ResPartner(models.Model):
                     ('is_membership', '=', True),
                     ('stage_id.category', '=', 'progress')], order="id desc", limit=1)
                 if not last_subscription:
-                    pass
+                    return res
                 elif last_subscription.all_members:
                     # Mark new company contact as member
                     res.write({'is_member': True})
                     # Update the lastest subscription
-                    last_subscription.write({
-                        'contact_ids': [4, last_subscription.id, res.id]})
+                    last_subscription.write({'contact_ids': [(4, res.id)]})
         return res
 
     def write(self, vals):
@@ -195,6 +194,15 @@ class ResPartner(models.Model):
         if not last_subscription:
             return super(ResPartner, self).write(vals)
         else:
+            # Case add a new contact to a company, update is_member field
+            if vals.get('child_ids') and last_subscription.all_members:
+                for child in self.browse(vals.get('child_ids')[0]):
+                    try:
+                        super(ResPartner, child).write({'is_member': True})
+                    except:
+                        pass  # FIXME
+
+            # Get other membership value
             membership_type = last_subscription.membership_type_id.name
             date_first_start = self.get_date_first_start()
             date_last_stop = self.get_date_last_stop()
