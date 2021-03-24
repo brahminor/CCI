@@ -79,6 +79,23 @@ class SaleSubscription(models.Model):
             result = True
         return result
 
+    def update_membership_contacts_info(self):
+        """
+        Update partner and contacts other membership informations
+        """
+        membership_type = self.membership_type_id.name
+        date_first_start = self.partner_id.get_date_first_start()
+        date_last_stop = self.partner_id.get_date_last_stop()
+
+        for contact in self.contact_ids:
+            if contact.is_member:
+                contact.write({
+                    'date_first_start': date_first_start,
+                    'date_last_stop': date_last_stop,
+                    'membership_type': membership_type,
+                })
+        return self
+
     def update_subscription_member(self):
         """
         The purpose of this fuction is to update all the subscription member
@@ -142,4 +159,5 @@ class SaleSubscription(models.Model):
         res = super(SaleSubscription, self).write(vals)
         # Update is_member field on partner base on subscription status type
         self.update_subscription_member()
+        self.update_membership_contacts_info()
         return res
