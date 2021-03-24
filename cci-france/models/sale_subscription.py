@@ -40,6 +40,8 @@ class SaleSubscription(models.Model):
     company_type = fields.Selection(
         string="Type partenaire", related="partner_id.company_type")
     membership_type_id = fields.Many2one('membership.type', string='Type adhesion')
+    active = fields.Boolean(
+        string='Actif', help='Allow to archive a membership', default=True)
 
     @api.onchange('all_members')
     def onchange_all_members(self):

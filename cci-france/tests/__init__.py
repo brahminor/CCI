@@ -1,1 +1,1 @@
->from odoo.addons.cci-france.tests import test_membership
+>from . import test_subscription
