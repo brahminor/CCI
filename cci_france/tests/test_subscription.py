@@ -87,7 +87,7 @@ class TestCCISaleSubscription(TestSubscriptionCommon):
             'template_id': cls.subscription_tmpl_annual.id,
             'is_membership': True,
             'individual_member': False,
-            'contact_ids': [(5, 0, [
+            'contact_ids': [(6, 0, [
                 cls.partner_clovis.id,
                 cls.partner_audrey.id,
                 cls.partner_amiguel.id])],
@@ -111,6 +111,8 @@ class TestCCISaleSubscription(TestSubscriptionCommon):
         subscription = self.subscription_multi
         partner = self.partner_anybox
         today = fields.Date.context_today(self.env.user)
+
+        self.assertEqual(len(subscription.contact_ids), 3)
 
         # Subscription isn't valid, so update main partner
         # should not update membership field
@@ -137,9 +139,11 @@ class TestCCISaleSubscription(TestSubscriptionCommon):
             "Date last stop should set to: today + 1 year",
         )
         self.assertEqual(partner.membership_type, self.membership_type_complex.name)
+        self.assertEqual(partner.is_member, True)
 
         # Check contact membership informations
         for contact in subscription.contact_ids:
+            self.assertEqual(contact.is_member, True)
             self.assertEqual(contact.date_first_start, partner.date_first_start)
             self.assertEqual(contact.date_last_stop, partner.date_last_stop)
             self.assertEqual(contact.membership_type, partner.membership_type,)
@@ -158,3 +162,57 @@ class TestCCISaleSubscription(TestSubscriptionCommon):
 
         self.assertTrue(subscription.check_valid_membership)
 
+    def test_03_update_subscription(self):
+        """
+        when updating a subscription, partner and contacts should be update
+        depending of subscription state category.
+        Case where subscription with multi contacts, but not all contact are member
+        """
+        Partner = self.env['res.partner']
+        partner_eric = Partner.create({'name': 'Eric', 'is_member': False})
+        partner_mathias = Partner.create({'name': 'Mathias', 'is_member': True})
+        partner_audrey = Partner.create({'name': 'Audrey', 'is_member': True})
+
+        subscription = self.env['sale.subscription'].create({
+            'name': 'Test Subscription partial member',
+            'partner_id': self.partner_anybox.id,
+            'pricelist_id': self.company_data['default_pricelist'].id,
+            'template_id': self.subscription_tmpl_annual.id,
+            'is_membership': True,
+            'individual_member': False,
+            'contact_ids': [(6, 0, [
+                partner_audrey.id, partner_mathias.id, partner_eric.id
+            ])],
+            'all_members': False,
+            'membership_type_id': self.membership_type_complex.id,
+            'stage_id': self.stage_nouveau.id,
+            'date_start': fields.Date.to_string(datetime.date.today()),
+            'date': fields.Date.to_string(datetime.date.today() + relativedelta(years=+1)),
+        })
+
+        self.assertIsNotNone(subscription)
+        self.assertEqual(len(subscription.contact_ids), 3)
+
+        # After creation, all contacts should be set a non_member (is_member: False)
+        # until subscription becore valide
+        self.assertEqual(self.partner_anybox.is_member, False)
+        for contact in subscription.contact_ids:
+            self.assertEqual(contact.is_member, False)
+
+        # Validate the subscription
+        self.assertEqual(subscription.stage_id.category, 'draft')
+        subscription.write({'stage_id': self.stage_paye.id})
+        self.assertEqual(subscription.stage_id.category, 'progress')
+
+        # Ensure that partner is_member (but not contacts)
+        self.assertEqual(self.partner_anybox.is_member, True)
+        for contact in subscription.contact_ids:
+            self.assertEqual(contact.is_member, False)
+
+        # Set subscription to all members
+        subscription.write({'all_members': True})
+
+        # Ensure that partner and contacts are members
+        self.assertEqual(self.partner_anybox.is_member, True)
+        for contact in subscription.contact_ids:
+            self.assertEqual(contact.is_member, True)
