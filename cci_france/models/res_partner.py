@@ -50,29 +50,6 @@ class ResPartner(models.Model):
 
         return action
 
-    def _compute_is_member(self):
-        """
-        Compute the is_member fiels base on sale.subscription health
-        """
-        for partner in self:
-            partner.is_member = False
-            # get the lastest subscription
-            subscription = self.env['sale.subscription'].search([
-                ('partner_id', '=', partner.id)], order="id desc", limit=1)
-            if subscription and subscription.health != "bad":
-                partner.is_member = True
-
-
-    def _search_is_member(self, operator, value):
-        """
-        Implement search method to used on is_member computed field
-        """
-        recs = self.search([]).filtered(lambda partner : partner.is_member is True )
-
-        if recs:
-            return [('id', 'in', [x.id for x in recs])]
-
-
     def _compute_individual_member(self):
         """
         Check the individual member field on sale.subscription model
