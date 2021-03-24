@@ -177,7 +177,7 @@
     </record>
 
     <menuitem name="Gestion Adhesions" id="membership.menu_association"
-        sequence="15" web_icon="cci-france,static/src/img/cci-logo.png"/>
+        sequence="15" web_icon="cci_france,static/src/img/cci-logo.png"/>
 
     <menuitem id="menu_membership_membership_line"
         name="Adhésions"

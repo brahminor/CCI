@@ -6,7 +6,7 @@ from odoo.addons.sale_subscription.tests.common_sale_subscription import TestSub
 
 class TestCCISaleSubscription(TestSubscriptionCommon):
     """
-    Test sale subscription with CCI-France rules
+    Test sale subscription with CCI France rules
     """
 
     @classmethod

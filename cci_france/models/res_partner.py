@@ -45,7 +45,7 @@ class ResPartner(models.Model):
         """
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id(
-            "cci-france.sale_subscription_action_inherit")
+            "cci_france.sale_subscription_action_inherit")
         action['domain'] = [('partner_id', 'child_of', self.id)]
 
         return action
