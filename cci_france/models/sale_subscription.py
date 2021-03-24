@@ -148,8 +148,12 @@ class SaleSubscription(models.Model):
         Override default create method
         """
         res = super(SaleSubscription, self).create(values)
-        # Update is_member field on partner (??)
-        # self.update_subscription_member()
+        # If the subscription isn't in the valid stage, we mark all members as non_member
+        if res.stage_id.category != 'progress':
+            res.partner_id.write({'is_member': False})
+            for contact in res.contact_ids:
+                contact.write({'is_member': False})
+
         return res
 
     def write(self, vals):
