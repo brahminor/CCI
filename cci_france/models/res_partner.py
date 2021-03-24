@@ -177,6 +177,9 @@ class ResPartner(models.Model):
                     res.write({'is_member': True})
                     # Update the lastest subscription
                     last_subscription.write({'contact_ids': [(4, res.id)]})
+                else:
+                    # Just add the partner as subscription contact
+                    last_subscription.write({'contact_ids': [(4, res.id)]})
         return res
 
     def write(self, vals):
