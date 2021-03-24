@@ -143,3 +143,18 @@ class TestCCISaleSubscription(TestSubscriptionCommon):
             self.assertEqual(contact.date_first_start, partner.date_first_start)
             self.assertEqual(contact.date_last_stop, partner.date_last_stop)
             self.assertEqual(contact.membership_type, partner.membership_type,)
+
+    def test_02_check_valid_membership(self):
+        """
+        Test check_valid_membership function
+        """
+
+        subscription = self.subscription_multi
+        self.assertFalse(subscription.check_valid_membership())
+
+        # Validate the subscription
+        self.assertEqual(subscription.stage_id.category, 'draft')
+        subscription.write({'stage_id': self.stage_paye.id})
+
+        self.assertTrue(subscription.check_valid_membership)
+
