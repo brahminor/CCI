@@ -275,7 +275,7 @@ class TestCCISaleSubscription(TestSubscriptionCommon):
         # Ensure that new contact is a member
         self.assertEqual(partner_audrey.is_member, True)
 
-    def test_04_add_contact_to_company_with_valid_subscription_case2(self):
+    def test_05_add_contact_to_company_with_valid_subscription_case2(self):
         """
         When we add a cntact to partner with a valid subscription:
             - The subscription should be udpade to add the new contact as member
@@ -336,3 +336,138 @@ class TestCCISaleSubscription(TestSubscriptionCommon):
         self.assertEqual(
             partner_audrey.is_member, False,
             "This partner is a contact on subscription, but not a member")
+
+    def test_06_get_date_first_start(self):
+        """
+        Test get_date_first_start function
+        """
+        # Create and validate 3 monthly membership
+        Partner = self.env['res.partner']
+        partner_eric = Partner.create({'name': 'Eric', 'is_member': False})
+        partner_mathias = Partner.create({'name': 'Mathias', 'is_member': False})
+
+        # Add child_ids on main partner
+        self.partner_anybox.write({'child_ids': [(4, partner_eric.id)]})
+        self.partner_anybox.write({'child_ids': [(4, partner_mathias.id)]})
+
+        subscription1 = self.env['sale.subscription'].create({
+            'name': 'Test Subscription 1',
+            'partner_id': self.partner_anybox.id,
+            'pricelist_id': self.company_data['default_pricelist'].id,
+            'template_id': self.subscription_tmpl_monthly.id,
+            'is_membership': True,
+            'individual_member': False,
+            'contact_ids': [(6, 0, self.partner_anybox.child_ids.ids)],
+            'all_members': True,
+            'membership_type_id': self.membership_type_complex.id,
+            'stage_id': self.stage_paye.id,
+            'date_start': fields.Date.to_string(datetime.date.today() - relativedelta(months=+3)),
+            'date': fields.Date.to_string(datetime.date.today() - relativedelta(months=+2)),
+        })
+
+        subscription2 = self.env['sale.subscription'].create({
+            'name': 'Test Subscription 2',
+            'partner_id': self.partner_anybox.id,
+            'pricelist_id': self.company_data['default_pricelist'].id,
+            'template_id': self.subscription_tmpl_monthly.id,
+            'is_membership': True,
+            'individual_member': False,
+            'contact_ids': [(6, 0, self.partner_anybox.child_ids.ids)],
+            'all_members': True,
+            'membership_type_id': self.membership_type_complex.id,
+            'stage_id': self.stage_paye.id,
+            'date_start': fields.Date.to_string(datetime.date.today() - relativedelta(months=+2)),
+            'date': fields.Date.to_string(datetime.date.today() - relativedelta(months=+1)),
+        })
+
+        subscription3 = self.env['sale.subscription'].create({
+            'name': 'Test Subscription 3',
+            'partner_id': self.partner_anybox.id,
+            'pricelist_id': self.company_data['default_pricelist'].id,
+            'template_id': self.subscription_tmpl_monthly.id,
+            'is_membership': True,
+            'individual_member': False,
+            'contact_ids': [(6, 0, self.partner_anybox.child_ids.ids)],
+            'all_members': True,
+            'membership_type_id': self.membership_type_complex.id,
+            'stage_id': self.stage_paye.id,
+            'date_start': fields.Date.to_string(datetime.date.today()),
+            'date': fields.Date.to_string(datetime.date.today() + relativedelta(months=+1)),
+        })
+
+        # Call this function and check the result
+        today = fields.Date.context_today(self.env.user)
+
+        date_first_start = self.partner_anybox.get_date_first_start()
+        self.assertEqual(date_first_start, today - relativedelta(months=+3))
+
+    def test_07_get_date_last_stop(self):
+        """
+        Test get_date_last_stop function
+        """
+
+        # Create and validate 3 monthly membership
+        Partner = self.env['res.partner']
+        partner_eric = Partner.create({'name': 'Eric', 'is_member': False})
+        partner_mathias = Partner.create({'name': 'Mathias', 'is_member': False})
+
+        # Add child_ids on main partner
+        self.partner_anybox.write({'child_ids': [(4, partner_eric.id)]})
+        self.partner_anybox.write({'child_ids': [(4, partner_mathias.id)]})
+
+        subscription1 = self.env['sale.subscription'].create({
+            'name': 'Test Subscription 1',
+            'partner_id': self.partner_anybox.id,
+            'pricelist_id': self.company_data['default_pricelist'].id,
+            'template_id': self.subscription_tmpl_monthly.id,
+            'is_membership': True,
+            'individual_member': False,
+            'contact_ids': [(6, 0, self.partner_anybox.child_ids.ids)],
+            'all_members': True,
+            'membership_type_id': self.membership_type_complex.id,
+            'stage_id': self.stage_paye.id,
+            'date_start': fields.Date.to_string(datetime.date.today() - relativedelta(months=+3)),
+            'date': fields.Date.to_string(datetime.date.today() - relativedelta(months=+2)),
+        })
+
+        subscription2 = self.env['sale.subscription'].create({
+            'name': 'Test Subscription 2',
+            'partner_id': self.partner_anybox.id,
+            'pricelist_id': self.company_data['default_pricelist'].id,
+            'template_id': self.subscription_tmpl_monthly.id,
+            'is_membership': True,
+            'individual_member': False,
+            'contact_ids': [(6, 0, self.partner_anybox.child_ids.ids)],
+            'all_members': True,
+            'membership_type_id': self.membership_type_complex.id,
+            'stage_id': self.stage_paye.id,
+            'date_start': fields.Date.to_string(datetime.date.today() - relativedelta(months=+2)),
+            'date': fields.Date.to_string(datetime.date.today() - relativedelta(months=+1)),
+        })
+
+        subscription3 = self.env['sale.subscription'].create({
+            'name': 'Test Subscription 3',
+            'partner_id': self.partner_anybox.id,
+            'pricelist_id': self.company_data['default_pricelist'].id,
+            'template_id': self.subscription_tmpl_monthly.id,
+            'is_membership': True,
+            'individual_member': False,
+            'contact_ids': [(6, 0, self.partner_anybox.child_ids.ids)],
+            'all_members': True,
+            'membership_type_id': self.membership_type_complex.id,
+            'stage_id': self.stage_paye.id,
+            'date_start': fields.Date.to_string(datetime.date.today()),
+            'date': fields.Date.to_string(datetime.date.today() + relativedelta(months=+1)),
+        })
+
+        today = fields.Date.context_today(self.env.user)
+
+        # Call this function and check the result
+        date_last_stop = self.partner_anybox.get_date_last_stop()
+        self.assertEqual(date_last_stop, today + relativedelta(months=+1))
+
+    def test_08_compute_individual_member(self):
+        """
+        test _compute_individual_member function
+        """
+        pass
