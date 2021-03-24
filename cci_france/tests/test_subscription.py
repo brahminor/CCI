@@ -216,3 +216,123 @@ class TestCCISaleSubscription(TestSubscriptionCommon):
         self.assertEqual(self.partner_anybox.is_member, True)
         for contact in subscription.contact_ids:
             self.assertEqual(contact.is_member, True)
+
+    def test_04_add_contact_to_company_with_valid_subscription_case1(self):
+        """
+        When we add a cntact to partner with a valid subscription:
+            - The subscription should be udpade to add the new contact as member
+            - The membership infos of partner should be copy on contact
+
+            Case 1: All_members subscription
+        """
+
+        Partner = self.env['res.partner']
+        partner_eric = Partner.create({'name': 'Eric', 'is_member': False})
+        partner_mathias = Partner.create({'name': 'Mathias', 'is_member': False})
+
+        # Add child_ids on main partner
+        self.partner_anybox.write({'child_ids': [(4, partner_eric.id)]})
+        self.partner_anybox.write({'child_ids': [(4, partner_mathias.id)]})
+
+        subscription = self.env['sale.subscription'].create({
+            'name': 'Test Subscription partial member',
+            'partner_id': self.partner_anybox.id,
+            'pricelist_id': self.company_data['default_pricelist'].id,
+            'template_id': self.subscription_tmpl_annual.id,
+            'is_membership': True,
+            'individual_member': False,
+            'contact_ids': [(6, 0, self.partner_anybox.child_ids.ids)],
+            'all_members': True,
+            'membership_type_id': self.membership_type_complex.id,
+            'stage_id': self.stage_nouveau.id,
+            'date_start': fields.Date.to_string(datetime.date.today()),
+            'date': fields.Date.to_string(datetime.date.today() + relativedelta(years=+1)),
+        })
+
+        self.assertIsNotNone(subscription)
+        self.assertEqual(len(subscription.contact_ids), 2)
+        self.assertEqual(len(self.partner_anybox.child_ids), 2)
+
+        self.assertEqual(self.partner_anybox.is_member, False)
+
+        # Validate the subscription
+        self.assertEqual(subscription.stage_id.category, 'draft')
+        subscription.write({'stage_id': self.stage_paye.id})
+        self.assertEqual(subscription.stage_id.category, 'progress')
+
+        self.assertEqual(partner_eric.is_member, True)
+        self.assertEqual(partner_mathias.is_member, True)
+        self.assertEqual(self.partner_anybox.is_member, True)
+
+        # Add a new contact to this partner
+        partner_audrey = Partner.create({
+            'name': 'Audrey', 'is_member': False, 'parent_id': self.partner_anybox.id})
+        self.assertEqual(len(self.partner_anybox.child_ids), 3)
+
+        # Check subscription contacts
+        self.assertEqual(len(subscription.contact_ids), 3)
+
+        # Ensure that new contact is a member
+        self.assertEqual(partner_audrey.is_member, True)
+
+    def test_04_add_contact_to_company_with_valid_subscription_case2(self):
+        """
+        When we add a cntact to partner with a valid subscription:
+            - The subscription should be udpade to add the new contact as member
+            - The membership infos of partner should be copy on contact
+
+            Case 2: NON All_members subscription
+        """
+
+        Partner = self.env['res.partner']
+        partner_eric = Partner.create({'name': 'Eric', 'is_member': False})
+        partner_mathias = Partner.create({'name': 'Mathias', 'is_member': False})
+
+        # Add child_ids on main partner
+        self.partner_anybox.write({'child_ids': [(4, partner_eric.id)]})
+        self.partner_anybox.write({'child_ids': [(4, partner_mathias.id)]})
+
+        subscription = self.env['sale.subscription'].create({
+            'name': 'Test Subscription partial member',
+            'partner_id': self.partner_anybox.id,
+            'pricelist_id': self.company_data['default_pricelist'].id,
+            'template_id': self.subscription_tmpl_annual.id,
+            'is_membership': True,
+            'individual_member': False,
+            'contact_ids': [(6, 0, self.partner_anybox.child_ids.ids)],
+            'all_members': False,
+            'membership_type_id': self.membership_type_complex.id,
+            'stage_id': self.stage_nouveau.id,
+            'date_start': fields.Date.to_string(datetime.date.today()),
+            'date': fields.Date.to_string(datetime.date.today() + relativedelta(years=+1)),
+        })
+
+        self.assertIsNotNone(subscription)
+        self.assertEqual(len(subscription.contact_ids), 2)
+        self.assertEqual(len(self.partner_anybox.child_ids), 2)
+
+        self.assertEqual(self.partner_anybox.is_member, False)
+
+        # Update company contact and set them to is_member True
+        partner_eric.write({'is_member': True})
+        partner_mathias.write({'is_member': True})
+
+        # Validate the subscription
+        self.assertEqual(subscription.stage_id.category, 'draft')
+        subscription.write({'stage_id': self.stage_paye.id})
+        self.assertEqual(subscription.stage_id.category, 'progress')
+
+        self.assertEqual(self.partner_anybox.is_member, True)
+
+        # Add a new contact to this partner
+        partner_audrey = Partner.create({
+            'name': 'Audrey', 'is_member': False, 'parent_id': self.partner_anybox.id})
+        self.assertEqual(len(self.partner_anybox.child_ids), 3)
+
+        # Check subscription contacts
+        self.assertEqual(len(subscription.contact_ids), 3)
+
+        # Ensure that new contact is NOT a member
+        self.assertEqual(
+            partner_audrey.is_member, False,
+            "This partner is a contact on subscription, but not a member")
