@@ -193,7 +193,7 @@ class ResPartner(models.Model):
             ('stage_id.category', '=', 'progress')], order="id desc", limit=1)
 
         if not last_subscription:
-            return
+            return super(ResPartner, self).write(vals)
         else:
             membership_type = last_subscription.membership_type_id.name
             date_first_start = self.get_date_first_start()
