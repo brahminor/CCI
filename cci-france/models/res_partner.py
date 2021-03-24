@@ -11,32 +11,22 @@ class ResPartner(models.Model):
 
     is_member = fields.Boolean(
         string='Est Membre',
-        # compute="_compute_is_member", search="_search_is_member",
         help="Case cochée automatiquement lorsqu'une une adhésion est validée pour la période en cours.")
     individual_member = fields.Boolean(
         string='Membre individuel', compute="_compute_individual_member",
         help="Case cochée si une cotisation à titre individuelle est validée sur la période en cours")
     date_first_start = fields.Date(
         string='Date Première adhésion',
-        compute="compute_date_first_start",
         help="Date de la première adhesion du membre")
     date_last_stop = fields.Date(
         string="Date fin adhésion",
-        compute="compute_date_last_stop",
         help="date de fin de la dernière adhésion valide")
     membership_type = fields.Char(
-        string='Type Adhesion', size=64, compute="_membership_type",
+        string='Type Adhesion', size=64,
         help="Type d'adhesion, récupéré sur le service")
     total_membership = fields.Integer(
         string='Nombre adhesion', help='Nombre total des adhésion',
         compute="_total_membership")
-
-    # FIXME: Delete this fields ???
-    # membership_state = fields.Selection(
-    #    selection_add=membership._STATE,
-    #    store=True,
-    #    compute="_compute_membership_state",
-    #    string="Statut actuel de l'adhérent", help="")
 
     def _total_membership(self):
         """
@@ -44,8 +34,10 @@ class ResPartner(models.Model):
         """
         subscription_mdl = self.env['sale.subscription']
         for partner in self:
-            partner.total_membership = subscription_mdl.search_count([
-                ('partner_id', '=', partner.id), ('is_membership', '=', True)])
+            subscription_count = subscription_mdl.search_count([
+                ('partner_id', '=', partner.id),
+                ('is_membership', '=', True)])
+            partner.total_membership = subscription_count
 
     def action_view_partner_membership(self):
         """
@@ -85,6 +77,8 @@ class ResPartner(models.Model):
         """
         Check the individual member field on sale.subscription model
         an assing the value on current partner
+
+        Note: Individuel_member is only for non company subscription
         """
         for partner in self:
             partner.individual_member = False
@@ -109,40 +103,45 @@ class ResPartner(models.Model):
             if not last_subscription:
                 partner.membership_type = None
             else:
-                partner.membership_type = last_subscription.template_id.name
+                partner.write({
+                    'membership_type': last_subscription.membership_type_id.name})
 
-    def compute_date_first_start(self):
+    def get_date_first_start(self):
         """
-        Determine la date de la première adhesion payée
+        Determine la date de la première adhesion valide
         """
-        if not self:
-            return
+        self.ensure_one()
+        first_date = None
 
-        for partner in self:
-            first_date = None
-            subscriptions = self.env['sale.subscription'].search([
-                ('partner_id', '=', partner.id)])
-            for subscription in subscriptions:
-                if not first_date:
-                    first_date = subscription.date_start
-                elif subscription.date_start and subscription.date_start < first_date:
-                    first_date = subscription.date_start
-            partner.date_first_start = first_date
+        subscriptions = self.env['sale.subscription'].search([
+            ('partner_id', '=', self.id),
+            ('is_membership', '=', True),
+            ('stage_id.category', '=', 'progress')])
+        for subscription in subscriptions:
+            if not first_date:
+                first_date = subscription.date_start
+            elif subscription.date_start and subscription.date_start < first_date:
+                first_date = subscription.date_start
+        return first_date
 
-    def compute_date_last_stop(self):
+    def get_date_last_stop(self):
         """
-        Determine la date de fin de la dernière adhesion
+        Determine la date de fin de la dernière adhesion valide
         """
-        for partner in self:
-            last_date = None
-            subscriptions = self.env['sale.subscription'].search([
-                ('partner_id', '=', partner.id)])
-            for subscription in subscriptions:
-                if not last_date:
-                    last_date = subscription.date
-                elif subscription.date and subscription.date > last_date:
-                    last_date = subscription.date
-            partner.date_last_stop = last_date
+
+        self.ensure_one()
+        last_date = None
+
+        subscriptions = self.env['sale.subscription'].search([
+            ('partner_id', '=', self.id),
+            ('is_membership', '=', True),
+            ('stage_id.category', '=', 'progress')])
+        for subscription in subscriptions:
+            if not last_date:
+                last_date = subscription.date
+            elif subscription.date and subscription.date > last_date:
+                last_date = subscription.date
+        return last_date
 
     @api.model
     def create(self, values):
@@ -168,7 +167,9 @@ class ResPartner(models.Model):
             else:
                 # Get the last subscription of parent
                 last_subscription = self.env['sale.subscription'].search([
-                    ('partner_id', '=', parent.id)], order="id desc", limit=1)
+                    ('partner_id', '=', parent.id),
+                    ('is_membership', '=', True),
+                    ('stage_id.category', '=', 'progress')], order="id desc", limit=1)
                 if not last_subscription:
                     pass
                 elif last_subscription.all_members:
@@ -178,3 +179,37 @@ class ResPartner(models.Model):
                     last_subscription.write({
                         'contact_ids': [4, last_subscription.id, res.id]})
         return res
+
+    def write(self, vals):
+        """
+        Override write method to update child_ids with
+        subscription information
+        """
+
+        # Check last subscription
+        last_subscription = self.env['sale.subscription'].search([
+            ('partner_id', '=', self.id),
+            ('is_membership', '=', True),
+            ('stage_id.category', '=', 'progress')], order="id desc", limit=1)
+
+        if not last_subscription:
+            return
+        else:
+            membership_type = last_subscription.membership_type_id.name
+            date_first_start = self.get_date_first_start()
+            date_last_stop = self.get_date_last_stop()
+
+            # Update values
+            vals['membership_type'] = membership_type
+            vals['date_first_start'] = date_first_start
+            vals['date_last_stop'] = date_last_stop
+
+            for contact in last_subscription.contact_ids:
+                if contact.is_member:
+                    contact_data = {
+                        'date_first_start': date_first_start,
+                        'date_last_stop': date_last_stop,
+                        'membership_type': membership_type,
+                    }
+                    super(ResPartner, contact).write(contact_data)
+        return super(ResPartner, self).write(vals)
