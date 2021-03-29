@@ -87,38 +87,38 @@ class ResPartner(models.Model):
         """
         Determine la date de la première adhesion valide
         """
-        self.ensure_one()
-        first_date = None
+        for partner in self:
+            first_date = None
 
-        subscriptions = self.env['sale.subscription'].search([
-            ('partner_id', '=', self.id),
-            ('is_membership', '=', True),
-            ('stage_id.category', '=', 'progress')])
-        for subscription in subscriptions:
-            if not first_date:
-                first_date = subscription.date_start
-            elif subscription.date_start and subscription.date_start < first_date:
-                first_date = subscription.date_start
-        return first_date
+            subscriptions = self.env['sale.subscription'].search([
+                ('partner_id', '=', partner.id),
+                ('is_membership', '=', True),
+                ('stage_id.category', '=', 'progress')])
+            for subscription in subscriptions:
+                if not first_date:
+                    first_date = subscription.date_start
+                elif subscription.date_start and subscription.date_start < first_date:
+                    first_date = subscription.date_start
+            return first_date
 
     def get_date_last_stop(self):
         """
         Determine la date de fin de la dernière adhesion valide
         """
 
-        self.ensure_one()
-        last_date = None
+        for partner in self:
+            last_date = None
 
-        subscriptions = self.env['sale.subscription'].search([
-            ('partner_id', '=', self.id),
-            ('is_membership', '=', True),
-            ('stage_id.category', '=', 'progress')])
-        for subscription in subscriptions:
-            if not last_date:
-                last_date = subscription.date
-            elif subscription.date and subscription.date > last_date:
-                last_date = subscription.date
-        return last_date
+            subscriptions = self.env['sale.subscription'].search([
+                ('partner_id', '=', partner.id),
+                ('is_membership', '=', True),
+                ('stage_id.category', '=', 'progress')])
+            for subscription in subscriptions:
+                if not last_date:
+                    last_date = subscription.date
+                elif subscription.date and subscription.date > last_date:
+                    last_date = subscription.date
+            return last_date
 
     @api.model
     def create(self, values):

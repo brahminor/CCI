@@ -83,18 +83,19 @@ class SaleSubscription(models.Model):
         """
         Update partner and contacts other membership informations
         """
-        membership_type = self.membership_type_id.name
-        date_first_start = self.partner_id.get_date_first_start()
-        date_last_stop = self.partner_id.get_date_last_stop()
+        for subscription in self:
+            membership_type = subscription.membership_type_id.name
+            date_first_start = subscription.partner_id.get_date_first_start()
+            date_last_stop = subscription.partner_id.get_date_last_stop()
 
-        for contact in self.contact_ids:
-            if contact.is_member:
-                contact.write({
-                    'date_first_start': date_first_start,
-                    'date_last_stop': date_last_stop,
-                    'membership_type': membership_type,
-                })
-        return self
+            for contact in subscription.contact_ids:
+                if contact.is_member:
+                    contact.write({
+                        'date_first_start': date_first_start,
+                        'date_last_stop': date_last_stop,
+                        'membership_type': membership_type,
+                    })
+            return subscription
 
     def update_subscription_member(self):
         """
