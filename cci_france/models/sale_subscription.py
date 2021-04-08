@@ -10,6 +10,9 @@ class MembershipType(models.Model):
 
     name = fields.Char(string='Nom', size=64, required=True, help="Nom du type d'adhésion")
     description = fields.Text(string='Description', )
+    company_ids = fields.Many2many(
+        'res.company', string='Sociétés',
+        help="Liste des sociétés pouvant utiliser ce type d'adhesion")
 
 
 class SaleSubscription(models.Model):
