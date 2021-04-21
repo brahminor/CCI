@@ -10,9 +10,7 @@ class MembershipType(models.Model):
 
     name = fields.Char(string='Nom', size=64, required=True, help="Nom du type d'adhésion")
     description = fields.Text(string='Description', )
-    company_ids = fields.Many2many(
-        'res.company', string='Sociétés',
-        help="Liste des sociétés pouvant utiliser ce type d'adhesion")
+    company_id = fields.Many2one('res.company', string='Sociétés')
 
 
 class SaleSubscription(models.Model):
@@ -21,6 +19,12 @@ class SaleSubscription(models.Model):
     """
 
     _inherit = 'sale.subscription'
+
+    def _get_default_membership_type_id(self):
+        """
+        Return a defaul list of membership_type_id based on default company
+        """
+        return self.env['membership.type'].search([('company_id', '=', self.env.company.id)])
 
     is_membership = fields.Boolean(
         string='Adhesion', default=False,
@@ -42,7 +46,9 @@ class SaleSubscription(models.Model):
     partner_shipping_id = fields.Many2one('res.partner', string='Service Address')
     company_type = fields.Selection(
         string="Type partenaire", related="partner_id.company_type")
-    membership_type_id = fields.Many2one('membership.type', string='Type adhesion')
+    membership_type_id = fields.Many2one(
+        'membership.type', string='Type adhesion',
+        default=_get_default_membership_type_id)
     active = fields.Boolean(
         string='Actif', help='Allow to archive a membership', default=True)
 
@@ -69,6 +75,16 @@ class SaleSubscription(models.Model):
             # also reset individual_member field
             self.individual_member = False
         self.contact_ids = self.partner_id.child_ids
+
+    @api.onchange('company_id')
+    def onchange_company(self):
+        """
+        Update membership type field based on company field
+        """
+        for subscription in self:
+            return {'domain': {'membership_type_id': [
+                ('company_id', '=', subscription.company_id.id)]}}
+
 
     def check_valid_membership(self):
         """
